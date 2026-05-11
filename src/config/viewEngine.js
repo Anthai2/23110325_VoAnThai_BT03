@@ -1,15 +1,9 @@
-const path = require('path');
-const express = require('express');
-const { config } = require('dotenv');
+const path = require("path");
 
-const app = express();
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, '../views'));
-
-app.use(express.static(path.join(__dirname, '../public')));
-
-const configViewEngine = () => {
-  return app;
+const configViewEngine = (app) => {
+  app.set("view engine", "ejs");
+  app.set("views", path.join(__dirname, "../views"));
+  app.use(require("express").static(path.join(__dirname, "../public")));
 };
 
 module.exports = configViewEngine;

@@ -13,9 +13,8 @@ app.use(express.urlencoded({ extended: true }));
 
 configViewEngine(app);
 
-// Tạm comment các route API chưa code tới
-// const apiRoutes = require('./routes/api');
-// app.use('/v1/api/', apiRoutes);
+const apiRoutes = require("./routes/api");
+app.use("/v1/api/", apiRoutes);
 
 // Route test cơ bản
 app.get("/", (req, res) => {
