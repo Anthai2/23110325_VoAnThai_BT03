@@ -3,15 +3,20 @@ import {
   UsergroupAddOutlined,
   HomeOutlined,
   SettingOutlined,
+  ShoppingCartOutlined,
+  AppstoreOutlined,
 } from "@ant-design/icons";
 import { Menu } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/auth.context";
+import { CartContext } from "../context/cart.context";
 
 const Header = () => {
   const navigate = useNavigate();
   const { auth, setAuth } = useContext(AuthContext);
+  const { cart } = useContext(CartContext);
   const [current, setCurrent] = useState("home");
+  const cartCount = cart.reduce((sum, item) => sum + Number(item.qty || 0), 0);
 
   const onClick = (e) => {
     setCurrent(e.key);
@@ -19,21 +24,31 @@ const Header = () => {
 
   const items = [
     {
-      label: <Link to={"/"}>Home Page</Link>,
+      label: <Link to={"/"}>Trang chủ</Link>,
       key: "home",
       icon: <HomeOutlined />,
+    },
+    {
+      label: <Link to="/products">Sản phẩm</Link>,
+      key: "products",
+      icon: <AppstoreOutlined />,
+    },
+    {
+      label: <Link to="/cart">Giỏ hàng ({cartCount})</Link>,
+      key: "cart",
+      icon: <ShoppingCartOutlined />,
     },
     ...(auth.isAuthenticated
       ? [
           {
-            label: <Link to={"/user"}>Users</Link>,
+            label: <Link to={"/user"}>Tài khoản</Link>,
             key: "user",
             icon: <UsergroupAddOutlined />,
           },
         ]
       : []),
     {
-      label: `Welcome ${auth?.user?.name ?? "Guest"}`,
+      label: `Menu ${auth?.user?.name ?? "Guest"}`,
       key: "SubMenu",
       icon: <SettingOutlined />,
       children: [
@@ -43,7 +58,7 @@ const Header = () => {
                 label: (
                   <span
                     onClick={() => {
-                      localStorage.clear("access_token");
+                      localStorage.removeItem("access_token");
                       setAuth({
                         isAuthenticated: false,
                         user: { email: "", name: "" },

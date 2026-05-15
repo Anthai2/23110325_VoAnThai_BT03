@@ -1,8 +1,8 @@
 import { Outlet } from "react-router-dom";
-import Header from "./components/layout/header";
-import axios from "./util/axios.customize";
+import Header from "./layout/header.jsx";
+import axios from "./util/axios.customize.js";
 import { useContext, useEffect } from "react";
-import { AuthContext } from "./components/context/auth.context";
+import { AuthContext } from "./context/auth.context.jsx";
 import { Spin } from "antd";
 
 function App() {

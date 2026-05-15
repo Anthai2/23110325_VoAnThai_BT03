@@ -5,7 +5,7 @@ const configViewEngine = require("./config/viewEngine");
 const { connection } = require("./config/database");
 
 const app = express();
-const port = process.env.PORT || 8888;
+const port = process.env.PORT || 8080;
 
 app.use(cors());
 app.use(express.json());
