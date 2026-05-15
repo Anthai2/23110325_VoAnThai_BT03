@@ -4,8 +4,12 @@ const jwt = require("jsonwebtoken");
 const auth = (req, res, next) => {
   // Cho phép các route này đi qua mà không cần token
   const white_lists = ["/", "/register", "/login"];
+  const isWhitelisted = white_lists.find(
+    (item) => "/v1/api" + item === req.originalUrl,
+  );
+  const isPublicProductRoute = req.originalUrl.startsWith("/v1/api/products");
 
-  if (white_lists.find((item) => "/v1/api" + item === req.originalUrl)) {
+  if (isWhitelisted || isPublicProductRoute) {
     next();
   } else {
     // Lấy token từ header Authorization (định dạng: Bearer <token>)

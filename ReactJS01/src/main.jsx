@@ -4,13 +4,17 @@ import App from "./App.jsx";
 import "./index.css";
 
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import RegisterPage from "./pages/register.jsx";
-import UserPage from "./pages/user.jsx";
-import HomePage from "./pages/home.jsx";
-import LoginPage from "./pages/login.jsx";
-import { AuthWrapper } from "./components/context/auth.context.jsx";
-import ForgotPasswordPage from "./pages/forgot-password.jsx";
-import ResetPasswordPage from "./pages/reset-password.jsx";
+import RegisterPage from "./pages/Register.jsx";
+import UserPage from "./pages/User.jsx";
+import HomePage from "./pages/HomePage.jsx";
+import ProductsPage from "./pages/ProductsPage.jsx";
+import ProductDetailPage from "./pages/ProductDetailPage.jsx";
+import CartPage from "./pages/CartPage.jsx";
+import LoginPage from "./pages/Login.jsx";
+import { AuthWrapper } from "./context/auth.context.jsx";
+import { CartProvider } from "./context/cart.context.jsx";
+import ForgotPasswordPage from "./pages/Forgot-password.jsx";
+import ResetPasswordPage from "./pages/Reset-password.jsx";
 const router = createBrowserRouter([
   {
     path: "/",
@@ -19,6 +23,18 @@ const router = createBrowserRouter([
       {
         index: true,
         element: <HomePage />,
+      },
+      {
+        path: "products",
+        element: <ProductsPage />,
+      },
+      {
+        path: "products/:id",
+        element: <ProductDetailPage />,
+      },
+      {
+        path: "cart",
+        element: <CartPage />,
       },
       {
         path: "user",
@@ -47,7 +63,9 @@ const router = createBrowserRouter([
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <AuthWrapper>
-      <RouterProvider router={router} />
+      <CartProvider>
+        <RouterProvider router={router} />
+      </CartProvider>
     </AuthWrapper>
   </React.StrictMode>,
 );
