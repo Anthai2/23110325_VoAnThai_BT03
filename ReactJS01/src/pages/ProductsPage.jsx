@@ -1,199 +1,191 @@
-import React, { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { getProducts } from "../services/productService";
+import { useEffect, useState } from "react";
+import {
+  getProductsByCategory,
+  getProducts,
+  getCategories,
+  searchProducts,
+} from "../services/productService";
 import ProductList from "../components/product/ProductList";
+import ProductFilter from "../components/product/ProductFilter";
+import ProductSkeletonLoader from "../components/product/ProductSkeletonLoader";
 
-const DEFAULT_LIMIT = 8;
-
-const buildFiltersFromSearchParams = (searchParams) => {
-  const page = Number(searchParams.get("page") || 1);
-  const limit = Number(searchParams.get("limit") || DEFAULT_LIMIT);
-
-  return {
-    q: searchParams.get("q") || "",
-    category: searchParams.get("category") || "",
-    minPrice: searchParams.get("minPrice") || "",
-    maxPrice: searchParams.get("maxPrice") || "",
-    sort: searchParams.get("sort") || "",
-    page: Number.isNaN(page) || page < 1 ? 1 : page,
-    limit: Number.isNaN(limit) || limit < 1 ? DEFAULT_LIMIT : limit,
-  };
-};
+const ITEMS_PER_PAGE = 12;
 
 const ProductsPage = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState(() =>
-    buildFiltersFromSearchParams(searchParams),
-  );
-
-  const [hasNext, setHasNext] = useState(false);
-
-  useEffect(() => {
-    const nextParams = {};
-
-    if (filters.q.trim()) nextParams.q = filters.q.trim();
-    if (filters.category) nextParams.category = filters.category;
-    if (filters.minPrice !== "") nextParams.minPrice = String(filters.minPrice);
-    if (filters.maxPrice !== "") nextParams.maxPrice = String(filters.maxPrice);
-    if (filters.sort) nextParams.sort = filters.sort;
-    if (filters.page !== 1) nextParams.page = String(filters.page);
-    if (filters.limit !== DEFAULT_LIMIT)
-      nextParams.limit = String(filters.limit);
-
-    setSearchParams(nextParams, { replace: true });
-  }, [filters, setSearchParams]);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [sort, setSort] = useState("newest");
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    const load = async () => {
+    const fetchProducts = async () => {
       setLoading(true);
       try {
+        let data;
         const params = {
-          page: filters.page,
-          limit: filters.limit,
+          page: currentPage,
+          limit: ITEMS_PER_PAGE,
+          sort: sort,
         };
-        if (filters.q.trim()) params.q = filters.q.trim();
-        if (filters.category) params.category = filters.category;
-        if (filters.minPrice !== "") params.minPrice = Number(filters.minPrice);
-        if (filters.maxPrice !== "") params.maxPrice = Number(filters.maxPrice);
-        if (filters.sort) params.sort = filters.sort;
 
-        const data = await getProducts(params);
-        setProducts(data || []);
-        setHasNext((data || []).length === Number(filters.limit));
+        if (searchQuery) {
+          // Tìm kiếm với query
+          data = await searchProducts({ ...params, q: searchQuery });
+        } else if (selectedCategory) {
+          data = await getProductsByCategory(selectedCategory, params);
+        } else {
+          data = await getProducts(params);
+        }
+
+        setProducts(data?.products || data || []);
+        setTotalPages(data?.pages || 1);
+        setTotalProducts(data?.total || 0);
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching products:", err);
+        setProducts([]);
       } finally {
         setLoading(false);
       }
     };
 
-    load();
-  }, [filters]);
+    fetchProducts();
+  }, [selectedCategory, currentPage, sort, searchQuery]);
 
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const data = await getProducts({ page: 1, limit: 200 });
-        const unique = Array.from(
-          new Set((data || []).map((item) => item.category).filter(Boolean)),
-        );
-        setCategories(unique);
-      } catch (error) {
-        console.error(error);
-      }
-    };
-    loadCategories();
-  }, []);
-
-  const handleFilterChange = (name, value) => {
-    setFilters((prev) => ({ ...prev, [name]: value, page: 1 }));
+  const handleCategoryChange = (category) => {
+    setSelectedCategory(category);
+    setCurrentPage(1);
+    setSearchQuery("");
   };
 
-  const handleReset = () => {
-    setFilters({
-      q: "",
-      category: "",
-      minPrice: "",
-      maxPrice: "",
-      sort: "",
-      page: 1,
-      limit: DEFAULT_LIMIT,
-    });
+  const handleSortChange = (e) => {
+    setSort(e.target.value);
+    setCurrentPage(1);
   };
 
-  const goPrevPage = () => {
-    setFilters((prev) => ({ ...prev, page: Math.max(1, prev.page - 1) }));
-  };
-
-  const goNextPage = () => {
-    if (!hasNext) return;
-    setFilters((prev) => ({ ...prev, page: prev.page + 1 }));
+  const handleSearch = (e) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(1);
+    setSelectedCategory(null);
   };
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-semibold mb-4">Sản phẩm</h1>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-3xl font-semibold mb-2">
+          {searchQuery
+            ? `Kết quả tìm kiếm: "${searchQuery}"`
+            : selectedCategory
+              ? `Danh mục: ${selectedCategory}`
+              : "Tất cả sản phẩm"}
+        </h1>
+        <p className="text-gray-600 mb-6">
+          Có{" "}
+          <span className="font-semibold text-blue-600">{totalProducts}</span>{" "}
+          sản phẩm
+        </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3 mb-6 p-4 border rounded-md bg-white">
-        <input
-          value={filters.q}
-          onChange={(e) => handleFilterChange("q", e.target.value)}
-          placeholder="Tìm theo tên/mô tả"
-          className="border rounded px-3 py-2 lg:col-span-2"
-        />
+        {/* Search Bar */}
+        <div className="mb-6">
+          <input
+            type="text"
+            placeholder="🔍 Tìm kiếm sản phẩm..."
+            value={searchQuery}
+            onChange={handleSearch}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
 
-        <select
-          value={filters.category}
-          onChange={(e) => handleFilterChange("category", e.target.value)}
-          className="border rounded px-3 py-2"
-        >
-          <option value="">Tất cả danh mục</option>
-          {categories.map((cat) => (
-            <option key={cat} value={cat}>
-              {cat}
-            </option>
-          ))}
-        </select>
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          {/* Sidebar Filter */}
+          <div className="lg:col-span-1">
+            <ProductFilter
+              selectedCategory={selectedCategory}
+              onCategoryChange={handleCategoryChange}
+              onSortChange={handleSortChange}
+              loading={loading}
+              disabled={searchQuery.length > 0}
+            />
+          </div>
 
-        <input
-          type="number"
-          min={0}
-          value={filters.minPrice}
-          onChange={(e) => handleFilterChange("minPrice", e.target.value)}
-          placeholder="Giá từ"
-          className="border rounded px-3 py-2"
-        />
+          {/* Products Grid */}
+          <div className="lg:col-span-4">
+            {loading ? (
+              <ProductSkeletonLoader count={ITEMS_PER_PAGE} />
+            ) : products.length > 0 ? (
+              <>
+                <ProductList products={products} loading={false} />
 
-        <input
-          type="number"
-          min={0}
-          value={filters.maxPrice}
-          onChange={(e) => handleFilterChange("maxPrice", e.target.value)}
-          placeholder="Giá đến"
-          className="border rounded px-3 py-2"
-        />
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex justify-center items-center gap-2 mt-8">
+                    <button
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+                    >
+                      ← Trước
+                    </button>
 
-        <select
-          value={filters.sort}
-          onChange={(e) => handleFilterChange("sort", e.target.value)}
-          className="border rounded px-3 py-2"
-        >
-          <option value="">Sắp xếp mặc định</option>
-          <option value="newest">Mới nhất</option>
-          <option value="bestseller">Bán chạy</option>
-        </select>
-      </div>
+                    {/* Page Numbers */}
+                    <div className="flex gap-1">
+                      {Array.from(
+                        { length: Math.min(totalPages, 7) },
+                        (_, i) => {
+                          let pageNum;
+                          if (totalPages <= 7) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 3) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= totalPages - 2) {
+                            pageNum = totalPages - 6 + i;
+                          } else {
+                            pageNum = currentPage - 2 + i;
+                          }
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => setCurrentPage(pageNum)}
+                              className={`px-3 py-2 rounded-lg font-medium transition-colors ${
+                                currentPage === pageNum
+                                  ? "bg-blue-500 text-white"
+                                  : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                              }`}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        },
+                      )}
+                    </div>
 
-      <div className="mb-4 flex items-center justify-between">
-        <p className="text-sm text-gray-600">Trang {filters.page}</p>
-        <button
-          onClick={handleReset}
-          className="px-3 py-2 border rounded text-sm"
-        >
-          Xóa bộ lọc
-        </button>
-      </div>
+                    <button
+                      onClick={() =>
+                        setCurrentPage((p) => Math.min(totalPages, p + 1))
+                      }
+                      disabled={currentPage === totalPages}
+                      className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors"
+                    >
+                      Tiếp →
+                    </button>
+                  </div>
+                )}
 
-      <ProductList products={products} loading={loading} />
-
-      <div className="mt-6 flex items-center justify-center gap-2">
-        <button
-          onClick={goPrevPage}
-          disabled={filters.page <= 1 || loading}
-          className="px-4 py-2 border rounded disabled:opacity-50"
-        >
-          Trang trước
-        </button>
-        <button
-          onClick={goNextPage}
-          disabled={!hasNext || loading}
-          className="px-4 py-2 border rounded disabled:opacity-50"
-        >
-          Trang sau
-        </button>
+                <p className="text-center mt-4 text-gray-600">
+                  Trang <span className="font-semibold">{currentPage}</span> /{" "}
+                  {totalPages}
+                </p>
+              </>
+            ) : (
+              <div className="text-center py-16">
+                <p className="text-xl text-gray-500">Không tìm thấy sản phẩm</p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

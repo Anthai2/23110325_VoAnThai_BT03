@@ -37,18 +37,17 @@ const LoginPage = () => {
         <div className="hidden md:flex flex-col justify-between p-8 bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-500 text-white">
           <div>
             <p className="text-xs uppercase tracking-[0.25em] text-emerald-100">
-              Member Area
+              Welcome Back to Our Store
             </p>
-            <h2 className="text-3xl font-bold mt-3 leading-tight">
-              Chào mừng bạn quay lại cửa hàng
-            </h2>
+            <h2 className="text-3xl font-bold mt-3 leading-tight">Xin chào!</h2>
             <p className="mt-4 text-emerald-50/90 text-sm leading-6">
               Đăng nhập để xem sản phẩm mới nhất, khuyến mãi nổi bật và quản lý
               giỏ hàng của bạn.
             </p>
           </div>
           <div className="text-xs text-emerald-100">
-            FullStackNodeJS01 • React + Express
+            Trang đăng nhập dành cho khách hàng của cửa hàng. Vui lòng nhập
+            thông tin
           </div>
         </div>
 
